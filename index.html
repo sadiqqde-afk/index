@@ -3,472 +3,562 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>محلل العملات الذكي</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>Scalping Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #060a0f;
-    --surface: #0d1520;
-    --surface2: #111d2e;
-    --border: #1a2d44;
-    --accent: #00d4ff;
-    --accent2: #0088aa;
-    --green: #00e676;
-    --red: #ff1744;
-    --yellow: #ffd600;
-    --text: #e8f4f8;
-    --muted: #5a7a8a;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans Arabic', sans-serif;
-    min-height: 100vh;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    z-index: 0;
-    pointer-events: none;
-  }
-  .app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 20px 14px; }
+:root{
+  --bg:#04080e;--s1:#0a1220;--s2:#0f1a2e;--s3:#142038;
+  --border:#1c2f48;--accent:#00d4ff;
+  --green:#00e676;--green2:#00c853;
+  --red:#ff1744;--red2:#d50000;
+  --yellow:#ffd600;--orange:#ff6d00;
+  --text:#dff0f8;--muted:#4a6a7a;
+  --glow:0 0 24px rgba(0,212,255,.15);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Arabic',sans-serif;overflow-x:hidden;}
 
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
-  }
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon {
-    width: 42px; height: 42px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 12px; display: flex; align-items: center; justify-content: center;
-    font-size: 20px; box-shadow: 0 0 20px rgba(0,212,255,0.2);
-  }
-  .logo-text h1 { font-size: 18px; font-weight: 700; color: var(--accent); }
-  .logo-text p { font-size: 10px; color: var(--muted); margin-top: 2px; }
-  .live-badge {
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.25);
-    color: var(--green); padding: 5px 12px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; letter-spacing: 1px;
-  }
-  .live-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+/* bg grid */
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,212,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.025) 1px,transparent 1px);
+  background-size:32px 32px;pointer-events:none;z-index:0;}
 
-  .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
-  .btn-refresh {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--accent); color: var(--bg);
-    border: none; padding: 10px 20px; border-radius: 10px;
-    font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
-    transition: all .2s;
-  }
-  .btn-refresh:hover { background: #33ddff; transform: translateY(-1px); }
-  .btn-refresh:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-  .btn-refresh.spinning svg { animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .last-update { color: var(--muted); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+.app{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:16px 12px;}
 
-  .status-bar {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 14px;
-    font-size: 12px; color: var(--muted); margin-bottom: 16px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .status-bar.error { border-color: rgba(255,23,68,.3); color: var(--red); background: rgba(255,23,68,.06); }
-  .status-bar.ok { border-color: rgba(0,230,118,.25); color: var(--green); background: rgba(0,230,118,.05); }
+/* ── Header ── */
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-icon{width:40px;height:40px;background:linear-gradient(135deg,#00d4ff,#0066aa);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--glow);}
+.brand h1{font-size:17px;font-weight:700;color:var(--accent);letter-spacing:.3px;}
+.brand p{font-size:10px;color:var(--muted);margin-top:1px;}
 
-  .coins-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 14px;
-  }
+.header-right{display:flex;align-items:center;gap:10px;}
+.live-pill{display:flex;align-items:center;gap:5px;background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.2);color:var(--green);padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.4s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
 
-  .coin-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 18px;
-    transition: all .3s; position: relative; overflow: hidden;
-    animation: fadeIn .4s ease both;
-  }
-  .coin-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--card-color, var(--accent)), transparent);
-  }
-  .coin-card:hover { border-color: var(--accent2); transform: translateY(-2px); box-shadow: 0 0 20px rgba(0,212,255,.1); }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+/* ── Timeframe tabs ── */
+.tf-bar{display:flex;gap:6px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
+.tf-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
+.tf-btn:hover{border-color:var(--accent);color:var(--accent);}
+.tf-btn.active{background:var(--accent);border-color:var(--accent);color:#000;box-shadow:0 0 12px rgba(0,212,255,.3);}
+.separator{width:1px;height:24px;background:var(--border);margin:0 4px;}
+.refresh-btn{display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:none;background:var(--s3);color:var(--text);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--border);}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
+.refresh-btn:disabled{opacity:.4;cursor:not-allowed;}
+.refresh-btn.spin svg{animation:rotateit 1s linear infinite;}
+@keyframes rotateit{to{transform:rotate(360deg)}}
+.ts{color:var(--muted);font-size:10px;font-family:'JetBrains Mono',monospace;margin-right:auto;}
 
-  .coin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .coin-sym { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700; }
-  .coin-name { font-size: 10px; color: var(--muted); margin-top: 2px; }
+/* ── Status ── */
+.status{padding:9px 14px;border-radius:9px;font-size:12px;border:1px solid var(--border);background:var(--s2);color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.status.ok{border-color:rgba(0,230,118,.25);background:rgba(0,230,118,.04);color:var(--green);}
+.status.err{border-color:rgba(255,23,68,.25);background:rgba(255,23,68,.05);color:var(--red);}
 
-  .signal-badge {
-    padding: 5px 12px; border-radius: 8px;
-    font-size: 12px; font-weight: 700; letter-spacing: .5px;
-  }
-  .sig-buy { background: rgba(0,230,118,.12); border: 1px solid rgba(0,230,118,.3); color: var(--green); }
-  .sig-sell { background: rgba(255,23,68,.12); border: 1px solid rgba(255,23,68,.3); color: var(--red); }
-  .sig-wait { background: rgba(255,214,0,.08); border: 1px solid rgba(255,214,0,.2); color: var(--yellow); }
+/* ── Opportunity bar (top picks) ── */
+.opps{margin-bottom:18px;}
+.opps-title{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.opps-list{display:flex;gap:8px;flex-wrap:wrap;}
+.opp-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;animation:popIn .3s ease both;}
+@keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.opp-buy{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3);color:var(--green);}
+.opp-sell{background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.3);color:var(--red);}
+.opp-chip:hover{transform:translateY(-2px);}
+.opp-score{background:rgba(255,255,255,.08);border-radius:4px;padding:1px 5px;font-size:10px;}
 
-  .price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
-  .price { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; }
-  .chg { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
-  .chg.pos { color: var(--green); background: rgba(0,230,118,.1); }
-  .chg.neg { color: var(--red); background: rgba(255,23,68,.1); }
+/* ── Grid ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;}
 
-  .indicators { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-bottom: 12px; }
-  .ind {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 9px; padding: 9px; text-align: center;
-  }
-  .ind-lbl { font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-  .ind-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
-  .c-green { color: var(--green); } .c-red { color: var(--red); } .c-yellow { color: var(--yellow); } .c-blue { color: var(--accent); }
+/* ── Card ── */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:all .25s;animation:fadeUp .35s ease both;}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cc,var(--accent)),transparent);opacity:.7;}
+.card:hover{transform:translateY(-2px);border-color:rgba(0,212,255,.3);box-shadow:0 4px 24px rgba(0,0,0,.4);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-  .rsi-wrap { margin-bottom: 12px; }
-  .rsi-lbl { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); margin-bottom: 4px; }
-  .rsi-track { height: 5px; background: var(--surface2); border-radius: 3px; position: relative; }
-  .rsi-thumb {
-    position: absolute; top: 50%; transform: translate(-50%,-50%);
-    width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--bg);
-    transition: left .6s ease;
-  }
+/* card signal flash */
+.card.flash-buy{animation:flashBuy .6s ease;}
+.card.flash-sell{animation:flashSell .6s ease;}
+@keyframes flashBuy{0%,100%{box-shadow:none}50%{box-shadow:0 0 20px rgba(0,230,118,.4);border-color:var(--green);}}
+@keyframes flashSell{0%,100%{box-shadow:none}50%{box-shadow:0 0 20px rgba(255,23,68,.4);border-color:var(--red);}}
 
-  .vol-row {
-    display: flex; justify-content: space-between; font-size: 10px;
-    color: var(--muted); padding-top: 8px; border-top: 1px solid var(--border);
-  }
-  .vol-val { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+.coin-id{display:flex;align-items:center;gap:8px;}
+.rank{width:20px;height:20px;border-radius:5px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.sym{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;}
+.cname{font-size:10px;color:var(--muted);margin-top:1px;}
 
-  .ai-box {
-    background: rgba(0,212,255,.04); border: 1px solid rgba(0,212,255,.1);
-    border-radius: 9px; padding: 11px; margin-top: 11px;
-  }
-  .ai-lbl { font-size: 9px; color: var(--accent); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
-  .ai-txt { font-size: 12px; color: #a0c0cc; line-height: 1.7; }
-  .ai-load { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
-  .dots span { animation: blink 1.2s infinite; opacity: 0; }
-  .dots span:nth-child(2){animation-delay:.2s} .dots span:nth-child(3){animation-delay:.4s}
-  @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+.sig{padding:5px 11px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.5px;}
+.sig-buy {background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3);color:var(--green);}
+.sig-sell{background:rgba(255,23,68,.12); border:1px solid rgba(255,23,68,.3); color:var(--red);}
+.sig-wait{background:rgba(255,214,0,.07); border:1px solid rgba(255,214,0,.2);  color:var(--yellow);}
 
-  .skeleton {
-    background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
-    background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px;
-  }
-  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+/* price */
+.price-row{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;}
+.pr{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;}
+.chg{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px;}
+.up{color:var(--green);background:rgba(0,230,118,.1);}
+.dn{color:var(--red);background:rgba(255,23,68,.1);}
 
-  footer { margin-top: 28px; text-align: center; color: var(--muted); font-size: 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+/* score bar */
+.score-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.score-label{font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;width:40px;}
+.score-track{flex:1;height:4px;background:var(--s3);border-radius:2px;overflow:hidden;}
+.score-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+.score-val{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;width:30px;text-align:left;}
+
+/* mini indicators */
+.inds{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;}
+.ind{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:7px 5px;text-align:center;}
+.ind-l{font-size:8px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px;}
+.ind-v{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;}
+.g{color:var(--green)}.r{color:var(--red)}.y{color:var(--yellow)}.b{color:var(--accent)}
+
+/* mini chart (sparkline) */
+.spark{height:36px;margin-bottom:10px;}
+.spark svg{width:100%;height:100%;}
+
+/* bottom row */
+.bot{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted);padding-top:8px;border-top:1px solid var(--border);}
+.vol-v{font-family:'JetBrains Mono',monospace;color:var(--text);font-size:10px;}
+
+/* AI */
+.ai{background:rgba(0,212,255,.03);border:1px solid rgba(0,212,255,.09);border-radius:8px;padding:9px;margin-top:9px;}
+.ai-l{font-size:8px;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
+.ai-t{font-size:11px;color:#90b0c0;line-height:1.65;}
+.ai-loading{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:10px;}
+.dots span{animation:blink 1.2s infinite;opacity:0;}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+
+/* skeleton */
+.sk{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:shim 1.4s infinite;border-radius:6px;}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* empty state */
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+
+footer{margin-top:24px;text-align:center;color:var(--muted);font-size:10px;padding-top:12px;border-top:1px solid var(--border);}
 </style>
 </head>
 <body>
 <div class="app">
-  <header>
-    <div class="logo">
-      <div class="logo-icon">📡</div>
-      <div class="logo-text">
-        <h1>محلل العملات الذكي</h1>
-        <p>بيانات حقيقية · RSI · MACD · توصيات Claude AI</p>
-      </div>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">⚡</div>
+    <div>
+      <h1>Scalping Scanner</h1>
+      <p>صيد فرص المضاربة السريعة · 15د · 30د · 1س</p>
     </div>
-    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
-  </header>
-
-  <div class="controls">
-    <button class="btn-refresh" id="refreshBtn" onclick="loadAll()">
-      <svg id="refreshIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-      </svg>
-      تحديث البيانات
-    </button>
-    <span class="last-update" id="lastUpdate">─</span>
   </div>
+  <div class="header-right">
+    <div class="live-pill"><div class="dot"></div>LIVE</div>
+  </div>
+</header>
 
-  <div class="status-bar" id="statusBar">⏳ جاري الاتصال بـ CoinGecko...</div>
-  <div class="coins-grid" id="grid"></div>
+<div class="tf-bar">
+  <button class="tf-btn active" onclick="setTF('15m',this)">15 دقيقة</button>
+  <button class="tf-btn" onclick="setTF('30m',this)">30 دقيقة</button>
+  <button class="tf-btn" onclick="setTF('1h',this)">ساعة</button>
+  <div class="separator"></div>
+  <button class="refresh-btn" id="rfBtn" onclick="loadAll()">
+    <svg id="rfIco" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+    </svg>
+    تحديث
+  </button>
+  <span class="ts" id="ts">─</span>
+</div>
 
-  <footer>⚠️ للأغراض التعليمية فقط · ليست نصيحة مالية · بيانات من CoinGecko</footer>
+<div class="status" id="stat">⏳ جاري مسح السوق...</div>
+
+<div class="opps" id="oppsWrap" style="display:none">
+  <div class="opps-title">🔥 أقوى الفرص الآن</div>
+  <div class="opps-list" id="oppsList"></div>
+</div>
+
+<div class="grid" id="grid"></div>
+<footer>⚠️ للمضاربة فقط — ليست نصيحة مالية · Binance Data</footer>
 </div>
 
 <script>
-// CoinGecko IDs
+// ── Config ────────────────────────────────────────────────────────
+let TF = '15m';
+const LIMIT = { '15m':60, '30m':60, '1h':60 };
+
+// Coins to scan — mix of volatile + liquid
 const COINS = [
-  { id:'bitcoin',      symbol:'BTC', name:'Bitcoin' },
-  { id:'ethereum',     symbol:'ETH', name:'Ethereum' },
-  { id:'binancecoin',  symbol:'BNB', name:'BNB' },
-  { id:'solana',       symbol:'SOL', name:'Solana' },
-  { id:'ripple',       symbol:'XRP', name:'XRP' },
-  { id:'cardano',      symbol:'ADA', name:'Cardano' },
-  { id:'dogecoin',     symbol:'DOGE', name:'Dogecoin' },
-  { id:'avalanche-2',  symbol:'AVAX', name:'Avalanche' },
-  { id:'chainlink',    symbol:'LINK', name:'Chainlink' },
-  { id:'polkadot',     symbol:'DOT', name:'Polkadot' },
-  { id:'litecoin',     symbol:'LTC', name:'Litecoin' },
-  { id:'tron',         symbol:'TRX', name:'TRON' },
+  {s:'BTC', n:'Bitcoin'}, {s:'ETH', n:'Ethereum'}, {s:'SOL', n:'Solana'},
+  {s:'BNB', n:'BNB'}, {s:'XRP', n:'XRP'}, {s:'DOGE', n:'Dogecoin'},
+  {s:'ADA', n:'Cardano'}, {s:'AVAX', n:'Avalanche'}, {s:'LINK', n:'Chainlink'},
+  {s:'DOT', n:'Polkadot'}, {s:'LTC', n:'Litecoin'}, {s:'MATIC', n:'Polygon'},
+  {s:'NEAR', n:'NEAR'}, {s:'FIL', n:'Filecoin'}, {s:'INJ', n:'Injective'},
+  {s:'OP', n:'Optimism'}, {s:'ARB', n:'Arbitrum'}, {s:'APT', n:'Aptos'},
+  {s:'SUI', n:'Sui'}, {s:'TIA', n:'Celestia'},
 ];
 
-const GECKO = 'https://api.coingecko.com/api/v3';
-
-// Fetch prices for all coins in one call
-async function fetchPrices() {
-  const ids = COINS.map(c => c.id).join(',');
-  const url = `${GECKO}/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_high_low_24h=true`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+// ── Binance Fetch ─────────────────────────────────────────────────
+async function getKlines(symbol, interval, limit) {
+  const pair = symbol + 'USDT';
+  const url = `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${interval}&limit=${limit}`;
+  const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
+  if (!r.ok) throw new Error(r.status);
+  const raw = await r.json();
+  return raw.map(k => ({
+    o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5]
+  }));
 }
 
-// Fetch 7-day hourly OHLC (CoinGecko free: 1-day = 5min, 7-day = hourly)
-async function fetchOHLC(id) {
-  const url = `${GECKO}/coins/${id}/ohlc?vs_currency=usd&days=7`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`OHLC HTTP ${res.status}`);
-  const raw = await res.json();
-  // raw = [[timestamp, open, high, low, close], ...]
-  return raw.map(r => ({ open:r[1], high:r[2], low:r[3], close:r[4] }));
+async function getTicker(symbol) {
+  const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}USDT`;
+  const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
 }
 
-// ── Technical Indicators ──────────────────────────────
-function calcRSI(closes, period=14) {
-  if (closes.length < period+1) return 50;
-  let gains=0, losses=0;
-  for (let i=closes.length-period; i<closes.length; i++) {
-    const d = closes[i] - closes[i-1];
-    if (d>0) gains+=d; else losses+=Math.abs(d);
+// ── Indicators ────────────────────────────────────────────────────
+function rsi(closes, p=14) {
+  if (closes.length < p+1) return 50;
+  let g=0,l=0;
+  for (let i=closes.length-p; i<closes.length; i++) {
+    const d=closes[i]-closes[i-1];
+    if(d>0)g+=d; else l-=d;
   }
-  const ag=gains/period, al=losses/period;
-  if (al===0) return 100;
-  return 100 - 100/(1 + ag/al);
+  const ag=g/p, al=l/p;
+  if(al===0) return 100;
+  return +(100-100/(1+ag/al)).toFixed(1);
 }
 
-function ema(arr, period) {
-  const k = 2/(period+1);
-  let e = arr[0];
-  for (let i=1;i<arr.length;i++) e = arr[i]*k + e*(1-k);
+function ema(arr, p) {
+  const k=2/(p+1); let e=arr[0];
+  for(let i=1;i<arr.length;i++) e=arr[i]*k+e*(1-k);
   return e;
 }
 
-function calcMACD(closes) {
-  if (closes.length<26) return {macd:0, hist:0};
-  const e12 = ema(closes.slice(-26), 12);
-  const e26 = ema(closes.slice(-26), 26);
-  const macd = e12 - e26;
-  return { macd, hist: macd * 0.2 }; // simplified histogram
+function macd(closes) {
+  if(closes.length<26) return {val:0,hist:0,bull:false};
+  const e12=ema(closes,12), e26=ema(closes,26);
+  const m=e12-e26;
+  const hist=m*0.25;
+  return {val:m, hist, bull:m>0&&hist>0};
 }
 
-function calcMA(closes, p) {
-  if (closes.length<p) return closes[closes.length-1];
-  return closes.slice(-p).reduce((a,b)=>a+b,0)/p;
+function ma(closes,p){ return closes.slice(-p).reduce((a,b)=>a+b,0)/p; }
+
+function bollingerBands(closes, p=20) {
+  const slice=closes.slice(-p);
+  const mean=slice.reduce((a,b)=>a+b,0)/p;
+  const std=Math.sqrt(slice.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/p);
+  return {upper:mean+2*std, lower:mean-2*std, mid:mean};
 }
 
-function signal(rsi, macd, ma20, ma50, price) {
-  let buy=0, sell=0;
-  if (rsi<30)      { buy+=3; }
-  else if (rsi<45) { buy+=1; }
-  else if (rsi>70) { sell+=3; }
-  else if (rsi>58) { sell+=1; }
-
-  if (macd.macd>0 && macd.hist>0) buy+=2;
-  else if (macd.macd<0 && macd.hist<0) sell+=2;
-
-  if (ma20>ma50) buy+=2; else sell+=2;
-  if (price>ma20 && price>ma50) buy+=1;
-  else if (price<ma20 && price<ma50) sell+=1;
-
-  const diff = buy - sell;
-  if (diff>=3) return 'شراء';
-  if (diff<=-3) return 'بيع';
-  return 'انتظار';
+function volumeSpike(vols) {
+  const avg=vols.slice(-20,-1).reduce((a,b)=>a+b,0)/19;
+  const last=vols[vols.length-1];
+  return +(last/avg).toFixed(2);
 }
 
-// ── Formatting ────────────────────────────────────────
-function fmtPrice(p) {
-  if (p>=1000) return '$'+p.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
-  if (p>=1)    return '$'+p.toFixed(4);
-  return '$'+p.toFixed(6);
-}
-function fmtVol(v) {
-  if (v>=1e9) return (v/1e9).toFixed(2)+'B';
-  if (v>=1e6) return (v/1e6).toFixed(2)+'M';
-  return (v/1e3).toFixed(1)+'K';
+// ── Scoring Engine ────────────────────────────────────────────────
+// Returns score -100 to +100 (positive=buy, negative=sell)
+function score(klines) {
+  const closes = klines.map(k=>k.c);
+  const highs  = klines.map(k=>k.h);
+  const lows   = klines.map(k=>k.l);
+  const vols   = klines.map(k=>k.v);
+  const price  = closes[closes.length-1];
+
+  const R   = rsi(closes);
+  const M   = macd(closes);
+  const ma9 = ma(closes,9);
+  const ma21= ma(closes,21);
+  const ma50= ma(closes,Math.min(50,closes.length));
+  const bb  = bollingerBands(closes);
+  const vs  = volumeSpike(vols);
+
+  let pts = 0;
+
+  // RSI (weight 25)
+  if(R<25) pts+=25; else if(R<35) pts+=15; else if(R<45) pts+=5;
+  else if(R>75) pts-=25; else if(R>65) pts-=15; else if(R>55) pts-=5;
+
+  // MACD (weight 20)
+  if(M.bull) pts+=20; else if(M.val>0) pts+=8;
+  else if(!M.bull&&M.val<0) pts-=20; else if(M.val<0) pts-=8;
+
+  // MA alignment (weight 20)
+  if(price>ma9&&ma9>ma21&&ma21>ma50) pts+=20;
+  else if(price>ma9&&ma9>ma21) pts+=10;
+  else if(price<ma9&&ma9<ma21&&ma21<ma50) pts-=20;
+  else if(price<ma9&&ma9<ma21) pts-=10;
+
+  // Bollinger (weight 20)
+  if(price<=bb.lower) pts+=20;
+  else if(price>=bb.upper) pts-=20;
+  else if(price<bb.mid) pts+=5;
+  else pts-=5;
+
+  // Volume spike (weight 15) — confirms move
+  if(vs>=2) pts += (pts>0?15:-15);
+  else if(vs>=1.5) pts += (pts>0?8:-8);
+
+  return {
+    total: Math.max(-100,Math.min(100,pts)),
+    rsi:R, macd:M, ma9, ma21, bb, vs, price,
+    closes: closes.slice(-30) // last 30 for sparkline
+  };
 }
 
-// ── Card ──────────────────────────────────────────────
-function skeleton(coin, i) {
-  return `<div class="coin-card" id="card-${coin.id}" style="animation-delay:${i*.06}s">
-    <div class="coin-header">
-      <div><div class="coin-sym">${coin.symbol}</div><div class="coin-name">${coin.name}</div></div>
-      <div class="skeleton" style="width:74px;height:28px;border-radius:7px"></div>
+// ── Signal label ─────────────────────────────────────────────────
+function sigLabel(s) {
+  if(s>=40)  return {txt:'شراء قوي',  cls:'sig-buy',  cc:'#00e676', emoji:'🟢'};
+  if(s>=15)  return {txt:'شراء',      cls:'sig-buy',  cc:'#00c853', emoji:'🟢'};
+  if(s<=-40) return {txt:'بيع قوي',   cls:'sig-sell', cc:'#ff1744', emoji:'🔴'};
+  if(s<=-15) return {txt:'بيع',       cls:'sig-sell', cc:'#d50000', emoji:'🔴'};
+  return     {txt:'انتظار',           cls:'sig-wait', cc:'#ffd600', emoji:'🟡'};
+}
+
+// ── Sparkline SVG ─────────────────────────────────────────────────
+function sparkline(closes, color) {
+  const w=260,h=36, pad=2;
+  const mn=Math.min(...closes), mx=Math.max(...closes);
+  const range=mx-mn||1;
+  const pts = closes.map((c,i)=>{
+    const x=pad+(i/(closes.length-1))*(w-pad*2);
+    const y=h-pad-(c-mn)/range*(h-pad*2);
+    return `${x},${y}`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" opacity="0.7"/>
+    <polyline points="${pts[pts.length-1]} ${pts[pts.length-1]}" fill="none"/>
+  </svg>`;
+}
+
+// ── Format ───────────────────────────────────────────────────────
+function fp(p){
+  if(p>=1000)return'$'+p.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(p>=1)return'$'+p.toFixed(4);
+  return'$'+p.toFixed(6);
+}
+function fv(v){
+  if(v>=1e9)return(v/1e9).toFixed(1)+'B';
+  if(v>=1e6)return(v/1e6).toFixed(1)+'M';
+  return(v/1e3).toFixed(0)+'K';
+}
+
+// ── Render ───────────────────────────────────────────────────────
+function setStatus(msg,cls=''){
+  const el=document.getElementById('stat');
+  el.className='status'+(cls?' '+cls:'');
+  el.textContent=msg;
+}
+
+function skeletonCard(coin,i){
+  return `<div class="card" style="animation-delay:${i*.04}s">
+    <div class="card-top">
+      <div class="coin-id"><div class="rank">${i+1}</div><div><div class="sym">${coin.s}</div><div class="cname">${coin.n}</div></div></div>
+      <div class="sk" style="width:72px;height:26px;border-radius:7px"></div>
     </div>
-    <div class="skeleton" style="width:130px;height:26px;margin-bottom:14px"></div>
-    <div class="indicators">
-      <div class="skeleton" style="height:55px;border-radius:9px"></div>
-      <div class="skeleton" style="height:55px;border-radius:9px"></div>
-      <div class="skeleton" style="height:55px;border-radius:9px"></div>
+    <div class="sk" style="width:120px;height:22px;margin-bottom:10px"></div>
+    <div class="sk" style="height:4px;margin-bottom:10px"></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px">
+      ${Array(4).fill('<div class="sk" style="height:52px;border-radius:7px"></div>').join('')}
     </div>
-    <div class="skeleton" style="height:36px;border-radius:8px;margin-top:10px"></div>
+    <div class="sk" style="height:36px;border-radius:6px;margin-bottom:10px"></div>
   </div>`;
 }
 
-function renderCard(coin, price, change, vol, high, low, closes) {
-  const card = document.getElementById(`card-${coin.id}`);
-  if (!card) return;
+function renderCard(coin, idx, sc, ticker) {
+  const card = document.getElementById(`c-${coin.s}`);
+  if(!card) return;
 
-  const rsi  = calcRSI(closes);
-  const macd = calcMACD(closes);
-  const ma20 = calcMA(closes,20);
-  const ma50 = calcMA(closes,50);
-  const sig  = signal(rsi, macd, ma20, ma50, price);
+  const change = +ticker.priceChangePercent;
+  const vol24  = +ticker.quoteVolume;
+  const sig    = sigLabel(sc.total);
+  const rsiCls = sc.rsi<30?'g':sc.rsi>70?'r':sc.rsi>55?'y':'b';
+  const macdCls= sc.macd.bull?'g':'r';
+  const maCls  = sc.ma9>sc.ma21?'g':'r';
+  const vsCls  = sc.vs>=2?'g':sc.vs>=1.5?'y':'b';
 
-  const sigClass = sig==='شراء' ? 'sig-buy' : sig==='بيع' ? 'sig-sell' : 'sig-wait';
-  const sigEmoji = sig==='شراء' ? '🟢' : sig==='بيع' ? '🔴' : '🟡';
-  const cardColor= sig==='شراء' ? '#00e676' : sig==='بيع' ? '#ff1744' : '#ffd600';
+  // score bar
+  const absPct = Math.abs(sc.total);
+  const barColor = sc.total>=0 ? 'var(--green)' : 'var(--red)';
+  const chgCls = change>=0?'up':'dn';
 
-  const chgCls = change>=0 ? 'pos' : 'neg';
-  const chgSign = change>=0 ? '+' : '';
-
-  let rsiCls='c-blue';
-  if (rsi<30) rsiCls='c-green'; else if(rsi>70) rsiCls='c-red'; else if(rsi>55) rsiCls='c-yellow';
-  const macdCls = macd.macd>0 ? 'c-green' : 'c-red';
-  const maCls   = ma20>ma50  ? 'c-green' : 'c-red';
-
-  const rsiPct = Math.max(3, Math.min(97, rsi));
-  const thumbColor = rsi<30 ? '#00e676' : rsi>70 ? '#ff1744' : rsi>55 ? '#ffd600' : '#00d4ff';
-
-  card.style.setProperty('--card-color', cardColor);
-
+  card.style.setProperty('--cc', sig.cc);
   card.innerHTML = `
-    <div class="coin-header">
-      <div><div class="coin-sym">${coin.symbol}</div><div class="coin-name">${coin.name}</div></div>
-      <div class="signal-badge ${sigClass}">${sigEmoji} ${sig}</div>
+    <div class="card-top">
+      <div class="coin-id">
+        <div class="rank">${idx+1}</div>
+        <div><div class="sym">${coin.s}</div><div class="cname">${coin.n}</div></div>
+      </div>
+      <div class="sig ${sig.cls}">${sig.emoji} ${sig.txt}</div>
     </div>
 
     <div class="price-row">
-      <span class="price">${fmtPrice(price)}</span>
-      <span class="chg ${chgCls}">${chgSign}${change.toFixed(2)}%</span>
+      <span class="pr">${fp(sc.price)}</span>
+      <span class="chg ${chgCls}">${change>=0?'+':''}${change.toFixed(2)}%</span>
     </div>
 
-    <div class="indicators">
-      <div class="ind">
-        <div class="ind-lbl">RSI</div>
-        <div class="ind-val ${rsiCls}">${rsi.toFixed(1)}</div>
+    <div class="score-row">
+      <span class="score-label">قوة</span>
+      <div class="score-track">
+        <div class="score-fill" style="width:${absPct}%;background:${barColor}"></div>
       </div>
-      <div class="ind">
-        <div class="ind-lbl">MACD</div>
-        <div class="ind-val ${macdCls}">${macd.macd>0?'▲':'▼'} ${Math.abs(macd.macd).toFixed(4)}</div>
-      </div>
-      <div class="ind">
-        <div class="ind-lbl">اتجاه MA</div>
-        <div class="ind-val ${maCls}">${ma20>ma50?'▲ صاعد':'▼ هابط'}</div>
-      </div>
+      <span class="score-val" style="color:${barColor}">${sc.total>0?'+':''}${sc.total}</span>
     </div>
 
-    <div class="rsi-wrap">
-      <div class="rsi-lbl"><span>30 بيع</span><span>RSI</span><span>شراء 70</span></div>
-      <div class="rsi-track">
-        <div class="rsi-thumb" style="left:${rsiPct}%;background:${thumbColor};box-shadow:0 0 8px ${thumbColor}66"></div>
-      </div>
+    <div class="inds">
+      <div class="ind"><div class="ind-l">RSI</div><div class="ind-v ${rsiCls}">${sc.rsi}</div></div>
+      <div class="ind"><div class="ind-l">MACD</div><div class="ind-v ${macdCls}">${sc.macd.bull?'▲':'▼'}</div></div>
+      <div class="ind"><div class="ind-l">MA</div><div class="ind-v ${maCls}">${sc.ma9>sc.ma21?'↑':'↓'}</div></div>
+      <div class="ind"><div class="ind-l">حجم</div><div class="ind-v ${vsCls}">${sc.vs}x</div></div>
     </div>
 
-    <div class="vol-row">
-      <span>حجم 24h: <span class="vol-val">${fmtVol(vol)}</span></span>
-      <span>H: ${fmtPrice(high)}</span>
-      <span>L: ${fmtPrice(low)}</span>
+    <div class="spark">${sparkline(sc.closes, sig.cc)}</div>
+
+    <div class="bot">
+      <span>Vol 24h: <span class="vol-v">${fv(vol24)}</span></span>
+      <span>BB: ${sc.price<=sc.bb.lower?'🟢 دعم':sc.price>=sc.bb.upper?'🔴 مقاومة':'⚪ وسط'}</span>
     </div>
 
-    <div class="ai-box">
-      <div class="ai-lbl">✦ Claude AI</div>
-      <div class="ai-load" id="ai-${coin.id}">
-        <div class="dots"><span>●</span><span>●</span><span>●</span></div> جاري التحليل...
-      </div>
-    </div>
-  `;
+    <div class="ai">
+      <div class="ai-l">✦ Claude</div>
+      <div class="ai-loading" id="ai-${coin.s}"><div class="dots"><span>●</span><span>●</span><span>●</span></div> جاري التحليل...</div>
+    </div>`;
 
-  // Claude analysis
-  fetchClaude(coin.symbol, rsi, macd, sig, change, price, ma20, ma50, coin.id);
+  // flash animation
+  if(sc.total>=40) card.classList.add('flash-buy');
+  else if(sc.total<=-40) card.classList.add('flash-sell');
+  setTimeout(()=>{card.classList.remove('flash-buy','flash-sell');},700);
+
+  // Claude
+  callClaude(coin.s, sc, sig.txt, TF);
 }
 
-async function fetchClaude(sym, rsi, macd, sig, chg, price, ma20, ma50, coinId) {
+async function callClaude(sym, sc, sigTxt, tf) {
+  const tfAr = tf==='15m'?'15 دقيقة':tf==='30m'?'30 دقيقة':'ساعة';
+  const prompt = `أنت متداول خبير في المضاربة السريعة (scalping). حلل فرصة ${sym} للتداول على إطار ${tfAr} بجملتين أو ثلاث فقط بالعربية:
+- السعر: ${fp(sc.price)} | RSI: ${sc.rsi} | MACD: ${sc.macd.bull?'صاعد':'هابط'} | حجم: ${sc.vs}x المعدل
+- البولنجر: ${sc.price<=sc.bb.lower?'عند الدعم':sc.price>=sc.bb.upper?'عند المقاومة':'في المنتصف'}
+- المتوسطات: ${sc.ma9>sc.ma21?'صاعدة':'هابطة'} | التوصية: ${sigTxt}
+اكتب: ماذا يحدث الآن، وما الذي يجب مراقبته. مباشر وعملي.`;
   try {
-    const prompt = `أنت محلل مالي خبير. حلل العملة ${sym} بجملتين أو ثلاث مختصرة جداً بالعربية:
-• السعر: ${fmtPrice(price)} | تغير 24h: ${chg.toFixed(2)}%
-• RSI: ${rsi.toFixed(1)} (${rsi<30?'تشبع بيع':rsi>70?'تشبع شراء':'محايد'})
-• MACD: ${macd.macd>0?'إيجابي':'سلبي'}
-• MA20 ${ma20>ma50?'فوق':'تحت'} MA50 → اتجاه ${ma20>ma50?'صاعد':'هابط'}
-• التوصية: ${sig}
-اكتب تحليلاً واقعياً ومباشراً، بدون مقدمات.`;
-
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:300,
-        messages:[{role:'user', content:prompt}]
-      })
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})
     });
     const d = await r.json();
-    const txt = d.content?.[0]?.text || '─';
-    const el = document.getElementById(`ai-${coinId}`);
-    if (el) { el.className='ai-txt'; el.textContent=txt; }
+    const txt = d.content?.[0]?.text || fallbackText(sc);
+    const el = document.getElementById(`ai-${sym}`);
+    if(el){el.className='ai-t';el.textContent=txt;}
   } catch {
-    const el = document.getElementById(`ai-${coinId}`);
-    if (el) { el.className='ai-txt'; el.textContent=`RSI ${rsi.toFixed(0)} مع اتجاه ${ma20>ma50?'صاعد':'هابط'}.`; }
+    const el = document.getElementById(`ai-${sym}`);
+    if(el){el.className='ai-t';el.textContent=fallbackText(sc);}
   }
 }
 
-// ── Main ──────────────────────────────────────────────
+function fallbackText(sc) {
+  const rsiStr = sc.rsi<30?'RSI في منطقة تشبع البيع — فرصة انتعاش':sc.rsi>70?'RSI في تشبع الشراء — احذر من تصحيح':'RSI محايد';
+  const volStr = sc.vs>=2?'حجم مرتفع بشكل لافت يدعم الحركة':sc.vs>=1.5?'حجم فوق المعدل':'حجم عادي';
+  return `${rsiStr}. ${volStr}.`;
+}
+
+// ── Top opportunities ─────────────────────────────────────────────
+function updateOpps(results) {
+  const sorted = [...results].filter(r=>r&&Math.abs(r.sc.total)>=40)
+    .sort((a,b)=>Math.abs(b.sc.total)-Math.abs(a.sc.total))
+    .slice(0,6);
+
+  const wrap = document.getElementById('oppsWrap');
+  const list = document.getElementById('oppsList');
+
+  if(sorted.length===0){wrap.style.display='none';return;}
+  wrap.style.display='block';
+
+  list.innerHTML = sorted.map((r,i)=>{
+    const sig=sigLabel(r.sc.total);
+    const cls=r.sc.total>0?'opp-buy':'opp-sell';
+    return `<div class="opp-chip ${cls}" style="animation-delay:${i*.06}s" onclick="scrollTo('${r.coin.s}')">
+      ${sig.emoji} ${r.coin.s}
+      <span class="opp-score">${r.sc.total>0?'+':''}${r.sc.total}</span>
+    </div>`;
+  }).join('');
+}
+
+function scrollTo(sym) {
+  document.getElementById(`c-${sym}`)?.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// ── Main load ─────────────────────────────────────────────────────
+function setTF(tf, btn) {
+  TF = tf;
+  document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAll();
+}
+
 async function loadAll() {
-  const btn = document.getElementById('refreshBtn');
-  const ico = document.getElementById('refreshIcon');
-  const statusEl = document.getElementById('statusBar');
-  btn.disabled=true; btn.classList.add('spinning');
-  statusEl.className='status-bar'; statusEl.textContent='⏳ جاري جلب البيانات من CoinGecko...';
+  const btn=document.getElementById('rfBtn');
+  const ico=document.getElementById('rfIco');
+  btn.disabled=true; btn.classList.add('spin');
+  setStatus('⏳ مسح '+COINS.length+' عملة على إطار '+TF+'...');
 
-  const grid = document.getElementById('grid');
-  grid.innerHTML = COINS.map((c,i)=>skeleton(c,i)).join('');
+  const grid=document.getElementById('grid');
+  grid.innerHTML=COINS.map((c,i)=>`<div class="card" id="c-${c.s}" style="animation-delay:${i*.04}s">${skeletonCard(c,i).replace(/^<div[^>]+>/,'').replace(/<\/div>$','')}</div>`).join('');
+  // Rebuild properly
+  grid.innerHTML=COINS.map((c,i)=>{
+    const sk=skeletonCard(c,i);
+    // inject id on outer div
+    return sk.replace('class="card"',`class="card" id="c-${c.s}"`);
+  }).join('');
 
-  try {
-    // Step 1: prices (one call)
-    const prices = await fetchPrices();
-    statusEl.className='status-bar ok'; statusEl.textContent='✅ تم جلب الأسعار — جاري تحليل البيانات التقنية...';
+  document.getElementById('oppsWrap').style.display='none';
 
-    // Step 2: OHLC per coin (staggered to avoid rate limiting)
-    for (let i=0; i<COINS.length; i++) {
-      const coin = COINS[i];
-      const pd = prices[coin.id];
-      if (!pd) continue;
-      try {
-        const ohlc = await fetchOHLC(coin.id);
-        const closes = ohlc.map(o=>o.close);
-        renderCard(coin, pd.usd, pd.usd_24h_change||0, pd.usd_24h_vol||0, pd.usd_24h_high||pd.usd, pd.usd_24h_low||pd.usd, closes);
-      } catch(e) {
-        // Fallback: generate synthetic RSI from 24h data for visual
-        const synth = Array.from({length:50},(_,j)=>pd.usd*(1+(Math.sin(j*0.3+(i*0.7))*0.02)));
-        renderCard(coin, pd.usd, pd.usd_24h_change||0, pd.usd_24h_vol||0, pd.usd_24h_high||pd.usd, pd.usd_24h_low||pd.usd, synth);
+  const results=[];
+  let done=0;
+
+  // Batch: 5 at a time
+  const batchSize=5;
+  for(let i=0;i<COINS.length;i+=batchSize){
+    const batch=COINS.slice(i,i+batchSize);
+    await Promise.all(batch.map(async (coin,j)=>{
+      const idx=i+j;
+      try{
+        const [klines, ticker] = await Promise.all([
+          getKlines(coin.s, TF, LIMIT[TF]),
+          getTicker(coin.s)
+        ]);
+        const sc=score(klines);
+        renderCard(coin, idx, sc, ticker);
+        results.push({coin, sc});
+        done++;
+        setStatus(`⏳ جاري المسح... ${done}/${COINS.length}`);
+      } catch(e){
+        console.warn(coin.s, e.message);
+        const card=document.getElementById(`c-${coin.s}`);
+        if(card) card.innerHTML=`<div style="padding:12px">
+          <div class="sym">${coin.s}</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:6px">تعذر التحميل</div>
+        </div>`;
       }
-      // small delay between OHLC calls
-      if (i<COINS.length-1) await new Promise(r=>setTimeout(r,300));
-    }
-
-    statusEl.className='status-bar ok'; statusEl.textContent='✅ جميع البيانات محدّثة — التحليل الذكي جاري...';
-    document.getElementById('lastUpdate').textContent =
-      'آخر تحديث: ' + new Date().toLocaleTimeString('ar-SA');
-
-  } catch(e) {
-    statusEl.className='status-bar error';
-    statusEl.textContent = '❌ خطأ في الاتصال: ' + e.message + ' — حاول مرة أخرى';
-    grid.innerHTML='';
+    }));
+    if(i+batchSize<COINS.length) await new Promise(r=>setTimeout(r,200));
   }
 
-  btn.disabled=false; btn.classList.remove('spinning');
+  updateOpps(results);
+
+  const tfAr=TF==='15m'?'15 دقيقة':TF==='30m'?'30 دقيقة':'ساعة';
+  setStatus(`✅ مسح ${done} عملة على إطار ${tfAr} — التحليل الذكي جاري...`,'ok');
+  document.getElementById('ts').textContent='آخر تحديث: '+new Date().toLocaleTimeString('ar-SA');
+
+  btn.disabled=false; btn.classList.remove('spin');
 }
 
+// Auto-refresh every 2 minutes for scalping
 loadAll();
-setInterval(loadAll, 90000);
+setInterval(loadAll, 120000);
 </script>
 </body>
 </html>
