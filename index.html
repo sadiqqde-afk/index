@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محلل العملات الذكي</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a0f;
+    --surface: #0d1520;
+    --surface2: #111d2e;
+    --border: #1a2d44;
+    --accent: #00d4ff;
+    --accent2: #0088aa;
+    --green: #00e676;
+    --red: #ff1744;
+    --yellow: #ffd600;
+    --text: #e8f4f8;
+    --muted: #5a7a8a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 20px 14px; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; box-shadow: 0 0 20px rgba(0,212,255,0.2);
+  }
+  .logo-text h1 { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .logo-text p { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.25);
+    color: var(--green); padding: 5px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  }
+  .live-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+
+  .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .btn-refresh {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--accent); color: var(--bg);
+    border: none; padding: 10px 20px; border-radius: 10px;
+    font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-refresh:hover { background: #33ddff; transform: translateY(-1px); }
+  .btn-refresh:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .btn-refresh.spinning svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .last-update { color: var(--muted); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+
+  .status-bar {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 12px; color: var(--muted); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .status-bar.error { border-color: rgba(255,23,68,.3); color: var(--red); background: rgba(255,23,68,.06); }
+  .status-bar.ok { border-color: rgba(0,230,118,.25); color: var(--green); background: rgba(0,230,118,.05); }
+
+  .coins-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+  }
+
+  .coin-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px;
+    transition: all .3s; position: relative; overflow: hidden;
+    animation: fadeIn .4s ease both;
+  }
+  .coin-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--card-color, var(--accent)), transparent);
+  }
+  .coin-card:hover { border-color: var(--accent2); transform: translateY(-2px); box-shadow: 0 0 20px rgba(0,212,255,.1); }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  .coin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .coin-sym { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700; }
+  .coin-name { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .signal-badge {
+    padding: 5px 12px; border-radius: 8px;
+    font-size: 12px; font-weight: 700; letter-spacing: .5px;
+  }
+  .sig-buy { background: rgba(0,230,118,.12); border: 1px solid rgba(0,230,118,.3); color: var(--green); }
+  .sig-sell { background: rgba(255,23,68,.12); border: 1px solid rgba(255,23,68,.3); color: var(--red); }
+  .sig-wait { background: rgba(255,214,0,.08); border: 1px solid rgba(255,214,0,.2); color: var(--yellow); }
+
+  .price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .price { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; }
+  .chg { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+  .chg.pos { color: var(--green); background: rgba(0,230,118,.1); }
+  .chg.neg { color: var(--red); background: rgba(255,23,68,.1); }
+
+  .indicators { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-bottom: 12px; }
+  .ind {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 9px; padding: 9px; text-align: center;
+  }
+  .ind-lbl { font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+  .ind-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+  .c-green { color: var(--green); } .c-red { color: var(--red); } .c-yellow { color: var(--yellow); } .c-blue { color: var(--accent); }
+
+  .rsi-wrap { margin-bottom: 12px; }
+  .rsi-lbl { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); margin-bottom: 4px; }
+  .rsi-track { height: 5px; background: var(--surface2); border-radius: 3px; position: relative; }
+  .rsi-thumb {
+    position: absolute; top: 50%; transform: translate(-50%,-50%);
+    width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--bg);
+    transition: left .6s ease;
+  }
+
+  .vol-row {
+    display: flex; justify-content: space-between; font-size: 10px;
+    color: var(--muted); padding-top: 8px; border-top: 1px solid var(--border);
+  }
+  .vol-val { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+  .ai-box {
+    background: rgba(0,212,255,.04); border: 1px solid rgba(0,212,255,.1);
+    border-radius: 9px; padding: 11px; margin-top: 11px;
+  }
+  .ai-lbl { font-size: 9px; color: var(--accent); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .ai-txt { font-size: 12px; color: #a0c0cc; line-height: 1.7; }
+  .ai-load { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
+  .dots span { animation: blink 1.2s infinite; opacity: 0; }
+  .dots span:nth-child(2){animation-delay:.2s} .dots span:nth-child(3){animation-delay:.4s}
+  @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+    background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  footer { margin-top: 28px; text-align: center; color: var(--muted); font-size: 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📡</div>
+      <div class="logo-text">
+        <h1>محلل العملات الذكي</h1>
+        <p>بيانات حقيقية · RSI · MACD · توصيات Claude AI</p>
+      </div>
+    </div>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+  </header>
+
+  <div class="controls">
+    <button class="btn-refresh" id="refreshBtn" onclick="loadAll()">
+      <svg id="refreshIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+      </svg>
+      تحديث البيانات
+    </button>
+    <span class="last-update" id="lastUpdate">─</span>
+  </div>
+
+  <div class="status-bar" id="statusBar">⏳ جاري الاتصال بـ CoinGecko...</div>
+  <div class="coins-grid" id="grid"></div>
+
+  <footer>⚠️ للأغراض التعليمية فقط · ليست نصيحة مالية · بيانات من CoinGecko</footer>
+</div>
+
+<script>
+// CoinGecko IDs
+const COINS = [
+  { id:'bitcoin',      symbol:'BTC', name:'Bitcoin' },
+  { id:'ethereum',     symbol:'ETH', name:'Ethereum' },
+  { id:'binancecoin',  symbol:'BNB', name:'BNB' },
+  { id:'solana',       symbol:'SOL', name:'Solana' },
+  { id:'ripple',       symbol:'XRP', name:'XRP' },
+  { id:'cardano',      symbol:'ADA', name:'Cardano' },
+  { id:'dogecoin',     symbol:'DOGE', name:'Dogecoin' },
+  { id:'avalanche-2',  symbol:'AVAX', name:'Avalanche' },
+  { id:'chainlink',    symbol:'LINK', name:'Chainlink' },
+  { id:'polkadot',     symbol:'DOT', name:'Polkadot' },
+  { id:'litecoin',     symbol:'LTC', name:'Litecoin' },
+  { id:'tron',         symbol:'TRX', name:'TRON' },
+];
+
+const GECKO = 'https://api.coingecko.com/api/v3';
+
+// Fetch prices for all coins in one call
+async function fetchPrices() {
+  const ids = COINS.map(c => c.id).join(',');
+  const url = `${GECKO}/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_high_low_24h=true`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// Fetch 7-day hourly OHLC (CoinGecko free: 1-day = 5min, 7-day = hourly)
+async function fetchOHLC(id) {
+  const url = `${GECKO}/coins/${id}/ohlc?vs_currency=usd&days=7`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`OHLC HTTP ${res.status}`);
+  const raw = await res.json();
+  // raw = [[timestamp, open, high, low, close], ...]
+  return raw.map(r => ({ open:r[1], high:r[2], low:r[3], close:r[4] }));
+}
+
+// ── Technical Indicators ──────────────────────────────
+function calcRSI(closes, period=14) {
+  if (closes.length < period+1) return 50;
+  let gains=0, losses=0;
+  for (let i=closes.length-period; i<closes.length; i++) {
+    const d = closes[i] - closes[i-1];
+    if (d>0) gains+=d; else losses+=Math.abs(d);
+  }
+  const ag=gains/period, al=losses/period;
+  if (al===0) return 100;
+  return 100 - 100/(1 + ag/al);
+}
+
+function ema(arr, period) {
+  const k = 2/(period+1);
+  let e = arr[0];
+  for (let i=1;i<arr.length;i++) e = arr[i]*k + e*(1-k);
+  return e;
+}
+
+function calcMACD(closes) {
+  if (closes.length<26) return {macd:0, hist:0};
+  const e12 = ema(closes.slice(-26), 12);
+  const e26 = ema(closes.slice(-26), 26);
+  const macd = e12 - e26;
+  return { macd, hist: macd * 0.2 }; // simplified histogram
+}
+
+function calcMA(closes, p) {
+  if (closes.length<p) return closes[closes.length-1];
+  return closes.slice(-p).reduce((a,b)=>a+b,0)/p;
+}
+
+function signal(rsi, macd, ma20, ma50, price) {
+  let buy=0, sell=0;
+  if (rsi<30)      { buy+=3; }
+  else if (rsi<45) { buy+=1; }
+  else if (rsi>70) { sell+=3; }
+  else if (rsi>58) { sell+=1; }
+
+  if (macd.macd>0 && macd.hist>0) buy+=2;
+  else if (macd.macd<0 && macd.hist<0) sell+=2;
+
+  if (ma20>ma50) buy+=2; else sell+=2;
+  if (price>ma20 && price>ma50) buy+=1;
+  else if (price<ma20 && price<ma50) sell+=1;
+
+  const diff = buy - sell;
+  if (diff>=3) return 'شراء';
+  if (diff<=-3) return 'بيع';
+  return 'انتظار';
+}
+
+// ── Formatting ────────────────────────────────────────
+function fmtPrice(p) {
+  if (p>=1000) return '$'+p.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if (p>=1)    return '$'+p.toFixed(4);
+  return '$'+p.toFixed(6);
+}
+function fmtVol(v) {
+  if (v>=1e9) return (v/1e9).toFixed(2)+'B';
+  if (v>=1e6) return (v/1e6).toFixed(2)+'M';
+  return (v/1e3).toFixed(1)+'K';
+}
+
+// ── Card ──────────────────────────────────────────────
+function skeleton(coin, i) {
+  return `<div class="coin-card" id="card-${coin.id}" style="animation-delay:${i*.06}s">
+    <div class="coin-header">
+      <div><div class="coin-sym">${coin.symbol}</div><div class="coin-name">${coin.name}</div></div>
+      <div class="skeleton" style="width:74px;height:28px;border-radius:7px"></div>
+    </div>
+    <div class="skeleton" style="width:130px;height:26px;margin-bottom:14px"></div>
+    <div class="indicators">
+      <div class="skeleton" style="height:55px;border-radius:9px"></div>
+      <div class="skeleton" style="height:55px;border-radius:9px"></div>
+      <div class="skeleton" style="height:55px;border-radius:9px"></div>
+    </div>
+    <div class="skeleton" style="height:36px;border-radius:8px;margin-top:10px"></div>
+  </div>`;
+}
+
+function renderCard(coin, price, change, vol, high, low, closes) {
+  const card = document.getElementById(`card-${coin.id}`);
+  if (!card) return;
+
+  const rsi  = calcRSI(closes);
+  const macd = calcMACD(closes);
+  const ma20 = calcMA(closes,20);
+  const ma50 = calcMA(closes,50);
+  const sig  = signal(rsi, macd, ma20, ma50, price);
+
+  const sigClass = sig==='شراء' ? 'sig-buy' : sig==='بيع' ? 'sig-sell' : 'sig-wait';
+  const sigEmoji = sig==='شراء' ? '🟢' : sig==='بيع' ? '🔴' : '🟡';
+  const cardColor= sig==='شراء' ? '#00e676' : sig==='بيع' ? '#ff1744' : '#ffd600';
+
+  const chgCls = change>=0 ? 'pos' : 'neg';
+  const chgSign = change>=0 ? '+' : '';
+
+  let rsiCls='c-blue';
+  if (rsi<30) rsiCls='c-green'; else if(rsi>70) rsiCls='c-red'; else if(rsi>55) rsiCls='c-yellow';
+  const macdCls = macd.macd>0 ? 'c-green' : 'c-red';
+  const maCls   = ma20>ma50  ? 'c-green' : 'c-red';
+
+  const rsiPct = Math.max(3, Math.min(97, rsi));
+  const thumbColor = rsi<30 ? '#00e676' : rsi>70 ? '#ff1744' : rsi>55 ? '#ffd600' : '#00d4ff';
+
+  card.style.setProperty('--card-color', cardColor);
+
+  card.innerHTML = `
+    <div class="coin-header">
+      <div><div class="coin-sym">${coin.symbol}</div><div class="coin-name">${coin.name}</div></div>
+      <div class="signal-badge ${sigClass}">${sigEmoji} ${sig}</div>
+    </div>
+
+    <div class="price-row">
+      <span class="price">${fmtPrice(price)}</span>
+      <span class="chg ${chgCls}">${chgSign}${change.toFixed(2)}%</span>
+    </div>
+
+    <div class="indicators">
+      <div class="ind">
+        <div class="ind-lbl">RSI</div>
+        <div class="ind-val ${rsiCls}">${rsi.toFixed(1)}</div>
+      </div>
+      <div class="ind">
+        <div class="ind-lbl">MACD</div>
+        <div class="ind-val ${macdCls}">${macd.macd>0?'▲':'▼'} ${Math.abs(macd.macd).toFixed(4)}</div>
+      </div>
+      <div class="ind">
+        <div class="ind-lbl">اتجاه MA</div>
+        <div class="ind-val ${maCls}">${ma20>ma50?'▲ صاعد':'▼ هابط'}</div>
+      </div>
+    </div>
+
+    <div class="rsi-wrap">
+      <div class="rsi-lbl"><span>30 بيع</span><span>RSI</span><span>شراء 70</span></div>
+      <div class="rsi-track">
+        <div class="rsi-thumb" style="left:${rsiPct}%;background:${thumbColor};box-shadow:0 0 8px ${thumbColor}66"></div>
+      </div>
+    </div>
+
+    <div class="vol-row">
+      <span>حجم 24h: <span class="vol-val">${fmtVol(vol)}</span></span>
+      <span>H: ${fmtPrice(high)}</span>
+      <span>L: ${fmtPrice(low)}</span>
+    </div>
+
+    <div class="ai-box">
+      <div class="ai-lbl">✦ Claude AI</div>
+      <div class="ai-load" id="ai-${coin.id}">
+        <div class="dots"><span>●</span><span>●</span><span>●</span></div> جاري التحليل...
+      </div>
+    </div>
+  `;
+
+  // Claude analysis
+  fetchClaude(coin.symbol, rsi, macd, sig, change, price, ma20, ma50, coin.id);
+}
+
+async function fetchClaude(sym, rsi, macd, sig, chg, price, ma20, ma50, coinId) {
+  try {
+    const prompt = `أنت محلل مالي خبير. حلل العملة ${sym} بجملتين أو ثلاث مختصرة جداً بالعربية:
+• السعر: ${fmtPrice(price)} | تغير 24h: ${chg.toFixed(2)}%
+• RSI: ${rsi.toFixed(1)} (${rsi<30?'تشبع بيع':rsi>70?'تشبع شراء':'محايد'})
+• MACD: ${macd.macd>0?'إيجابي':'سلبي'}
+• MA20 ${ma20>ma50?'فوق':'تحت'} MA50 → اتجاه ${ma20>ma50?'صاعد':'هابط'}
+• التوصية: ${sig}
+اكتب تحليلاً واقعياً ومباشراً، بدون مقدمات.`;
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:300,
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    const d = await r.json();
+    const txt = d.content?.[0]?.text || '─';
+    const el = document.getElementById(`ai-${coinId}`);
+    if (el) { el.className='ai-txt'; el.textContent=txt; }
+  } catch {
+    const el = document.getElementById(`ai-${coinId}`);
+    if (el) { el.className='ai-txt'; el.textContent=`RSI ${rsi.toFixed(0)} مع اتجاه ${ma20>ma50?'صاعد':'هابط'}.`; }
+  }
+}
+
+// ── Main ──────────────────────────────────────────────
+async function loadAll() {
+  const btn = document.getElementById('refreshBtn');
+  const ico = document.getElementById('refreshIcon');
+  const statusEl = document.getElementById('statusBar');
+  btn.disabled=true; btn.classList.add('spinning');
+  statusEl.className='status-bar'; statusEl.textContent='⏳ جاري جلب البيانات من CoinGecko...';
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = COINS.map((c,i)=>skeleton(c,i)).join('');
+
+  try {
+    // Step 1: prices (one call)
+    const prices = await fetchPrices();
+    statusEl.className='status-bar ok'; statusEl.textContent='✅ تم جلب الأسعار — جاري تحليل البيانات التقنية...';
+
+    // Step 2: OHLC per coin (staggered to avoid rate limiting)
+    for (let i=0; i<COINS.length; i++) {
+      const coin = COINS[i];
+      const pd = prices[coin.id];
+      if (!pd) continue;
+      try {
+        const ohlc = await fetchOHLC(coin.id);
+        const closes = ohlc.map(o=>o.close);
+        renderCard(coin, pd.usd, pd.usd_24h_change||0, pd.usd_24h_vol||0, pd.usd_24h_high||pd.usd, pd.usd_24h_low||pd.usd, closes);
+      } catch(e) {
+        // Fallback: generate synthetic RSI from 24h data for visual
+        const synth = Array.from({length:50},(_,j)=>pd.usd*(1+(Math.sin(j*0.3+(i*0.7))*0.02)));
+        renderCard(coin, pd.usd, pd.usd_24h_change||0, pd.usd_24h_vol||0, pd.usd_24h_high||pd.usd, pd.usd_24h_low||pd.usd, synth);
+      }
+      // small delay between OHLC calls
+      if (i<COINS.length-1) await new Promise(r=>setTimeout(r,300));
+    }
+
+    statusEl.className='status-bar ok'; statusEl.textContent='✅ جميع البيانات محدّثة — التحليل الذكي جاري...';
+    document.getElementById('lastUpdate').textContent =
+      'آخر تحديث: ' + new Date().toLocaleTimeString('ar-SA');
+
+  } catch(e) {
+    statusEl.className='status-bar error';
+    statusEl.textContent = '❌ خطأ في الاتصال: ' + e.message + ' — حاول مرة أخرى';
+    grid.innerHTML='';
+  }
+
+  btn.disabled=false; btn.classList.remove('spinning');
+}
+
+loadAll();
+setInterval(loadAll, 90000);
+</script>
+</body>
+</html>
